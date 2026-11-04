@@ -19,6 +19,14 @@ target_link_libraries(hello_freertos PRIVATE
   FreeRTOS-Kernel-Heap4
 )
 
+add_library(can2040 ${CAN_PATH}/src/can2040.c)
+target_include_directories(can2040 PUBLIC ${CAN_PATH}/src)
+target_link_libraries(can2040 PRIVATE
+  cmsis_core
+  hardware_structs
+  pico_stdlib
+)
+
 # The CYW43 is the Wifi/Bluetooth module. If the board is set to pico_w, this
 # variable will be set and the wireless libraries added.
 if(PICO_CYW43_SUPPORTED)
