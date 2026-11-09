@@ -51,11 +51,10 @@ void canbus_setup(void)
 int main( void )
 {
     stdio_init_all();
+    canbus_setup();
     const char *rtos_name;
     rtos_name = "FreeRTOS";
     TaskHandle_t task;
-    xTaskCreate(main_task, "MainThread",
-                MAIN_TASK_STACK_SIZE, NULL, MAIN_TASK_PRIORITY, &task);
     vTaskStartScheduler();
     return 0;
 }
