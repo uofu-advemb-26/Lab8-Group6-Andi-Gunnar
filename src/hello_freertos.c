@@ -66,11 +66,11 @@ int main( void )
 {
     stdio_init_all();
     canbus_setup();
-    cyw43_arch_init()
+    cyw43_arch_init();
     sleep_ms(1000);
     const char *rtos_name;
     rtos_name = "FreeRTOS";
-    can2040_msg_t msg;
+    struct can2040_msg msg;
     msg.id = 0x01;
     msg.dlc = strlen(rtos_name);
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);

@@ -32,6 +32,15 @@ else()
 # Default to the submodule
     set(UNITY_PATH lib/unity)
 endif()
+if (DEFINED CAN2040_PATH)
+# Already defined, e.g. -D flag
+elseif(DEFINED ENV{CAN2040_PATH})
+# Defined in an environment variable
+    set(CAN2040_PATH $ENV{CAN2040_PATH})
+else()
+# Default to the submodule
+    set(CAN2040_PATH lib/can2040)
+endif()
 
 if(DEFINED ENV{OPENOCD_PATH})
     set(OPENOCD_PATH $ENV{OPENOCD_PATH})
