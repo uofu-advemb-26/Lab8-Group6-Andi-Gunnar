@@ -22,7 +22,17 @@ static struct can2040 cbus;
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
     if (notify == CAN2040_NOTIFY_RX) {
-        
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false);
+            vTaskDelay(100);
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
+            vTaskDelay(100);
+            can2040_transmit(&cbus, &msg);
+    }
+    if (notify == CAN2040_NOTIFY_TX) {
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false);
+            vTaskDelay(400);
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
+            vTaskDelay(400);
     }
 
 }
@@ -56,11 +66,14 @@ int main( void )
 {
     stdio_init_all();
     canbus_setup();
+    cyw43_arch_init()
+    sleep_ms(1000);
     const char *rtos_name;
     rtos_name = "FreeRTOS";
     can2040_msg_t msg;
     msg.id = 0x01;
     msg.dlc = strlen(rtos_name);
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
     memcpy(msg.data, rtos_name, msg.dlc);
     can2040_transmit(&cbus, &msg);
     vTaskStartScheduler();
