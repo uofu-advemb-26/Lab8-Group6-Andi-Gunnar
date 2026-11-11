@@ -21,13 +21,17 @@ static struct can2040 cbus;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
-    // Put your code here....
+    if (notify == CAN2040_NOTIFY_RX) {
+        
+    }
+
 }
 
 static void PIOx_IRQHandler(void)
 {
     can2040_pio_irq_handler(&cbus);
 }
+
 
 void canbus_setup(void)
 {
@@ -54,7 +58,11 @@ int main( void )
     canbus_setup();
     const char *rtos_name;
     rtos_name = "FreeRTOS";
-    TaskHandle_t task;
+    can2040_msg_t msg;
+    msg.id = 0x01;
+    msg.dlc = strlen(rtos_name);
+    memcpy(msg.data, rtos_name, msg.dlc);
+    can2040_transmit(&cbus, &msg);
     vTaskStartScheduler();
     return 0;
 }
