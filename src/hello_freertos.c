@@ -15,14 +15,20 @@
 
 #include <can2040.h>
 #include <hardware/regs/intctrl.h>
-#include <stdio.h>
+#include <queue.h>
+#include <semphr.h>
 
 static struct can2040 cbus;
+
+QueueHandle_t msg_queue;
+SemaphoreHandle_t can2040_mutex;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
     if (notify & CAN2040_NOTIFY_RX) {
-        xQueueSendToBackFromISR(msg_queue, msg, PORT_MAX_DELAY);
+        xSemaphoreTakeFromISR(can2040_mutex, NULL);
+        xQueueSendToBackFromISR(msg_queue, msg, NULL);
+        xSemaphoreGiveFromISR(can2040_mutex, NULL);
     }
 }
 
@@ -61,7 +67,7 @@ void can2040_task_receive(void *params)
     for (int i = 0; i < msg.dlc; i++) {
         printf("%02X ", msg.data[i]);
     }
-    printf("\n");
+    printf("\n\n");
 
     vTaskDelay(pdMS_TO_TICKS(100));
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
@@ -90,11 +96,15 @@ int main( void )
     stdio_init_all();
     canbus_setup();
     cyw43_arch_init();
+    
     msg_queue = xQueueCreate(100, sizeof(struct can2040_msg));
     TaskHandle_t canbus_task_handle_receive;
     TaskHandle_t canbus_task_handle_transmit;
+    can2040_mutex = xSemaphoreCreateMutex();
+
     xTaskCreate(can2040_task_receive, "canbus_task_receive", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1UL, &canbus_task_handle_receive);
     xTaskCreate(can2040_task_transmit, "canbus_task_transmit", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1UL, &canbus_task_handle_transmit);
+    
     vTaskStartScheduler();
     return 0;
 }
