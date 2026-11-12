@@ -21,20 +21,9 @@ static struct can2040 cbus;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
-    if (notify == CAN2040_NOTIFY_RX) {
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false);
-            vTaskDelay(100);
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
-            vTaskDelay(100);
-            can2040_transmit(&cbus, &msg);
+    if (notify & CAN2040_NOTIFY_RX) {
+        xQueueSendToBackFromISR(msg_queue, msg, PORT_MAX_DELAY);
     }
-    if (notify == CAN2040_NOTIFY_TX) {
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false);
-            vTaskDelay(400);
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
-            vTaskDelay(400);
-    }
-
 }
 
 static void PIOx_IRQHandler(void)
@@ -62,20 +51,50 @@ void canbus_setup(void)
     can2040_start(&cbus, sys_clock, bitrate, gpio_rx, gpio_tx);
 }
 
+void can2040_task_receive(void *params)
+{
+    struct can2040_msg msg;
+    xQueueReceive(msg_queue, &msg, portMAX_DELAY);
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+
+    printf("Received message: ID=0x%03X, DLC=%d, Data=", msg.id, msg.dlc);
+    for (int i = 0; i < msg.dlc; i++) {
+        printf("%02X ", msg.data[i]);
+    }
+    printf("\n");
+
+    vTaskDelay(pdMS_TO_TICKS(100));
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+}
+
+void can2040_task_transmit(void *params)
+{
+    struct can2040_msg msg;
+    msg.id = 0x123;
+    msg.dlc = 4;
+    msg.data[0] = 'P';
+    msg.data[1] = 'I';
+    msg.data[2] = 'C';
+    msg.data[3] = 'O';
+    while (1) {
+        can2040_transmit(&cbus, &msg);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
 int main( void )
 {
     stdio_init_all();
     canbus_setup();
     cyw43_arch_init();
-    sleep_ms(1000);
-    const char *rtos_name;
-    rtos_name = "FreeRTOS";
-    struct can2040_msg msg;
-    msg.id = 0x01;
-    msg.dlc = strlen(rtos_name);
-    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true);
-    memcpy(msg.data, rtos_name, msg.dlc);
-    can2040_transmit(&cbus, &msg);
+    msg_queue = xQueueCreate(100, sizeof(struct can2040_msg));
+    TaskHandle_t canbus_task_handle_receive;
+    TaskHandle_t canbus_task_handle_transmit;
+    xTaskCreate(can2040_task_receive, "canbus_task_receive", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1UL, &canbus_task_handle_receive);
+    xTaskCreate(can2040_task_transmit, "canbus_task_transmit", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1UL, &canbus_task_handle_transmit);
     vTaskStartScheduler();
     return 0;
 }
