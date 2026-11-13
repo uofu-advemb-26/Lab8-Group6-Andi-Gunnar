@@ -74,7 +74,10 @@ void can2040_task_receive(void *params)
 void can2040_task_transmit(void *params)
 {
     struct can2040_msg msg;
+    // Setup a message to send with low priority
     msg.id = 0x123;
+    // Setup a message to send with high priority
+    msg.id = 0x001;
     msg.dlc = 4;
     msg.data[0] = 'P';
     msg.data[1] = 'I';
