@@ -23,7 +23,7 @@ QueueHandle_t msg_queue;
 
 static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
-    if (notify & CAN2040_NOTIFY_RECEIVE) {
+    if (notify & CAN2040_NOTIFY_RX) {
         xQueueSendToBackFromISR(msg_queue, msg, NULL);
     }
 }
