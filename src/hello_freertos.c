@@ -62,7 +62,7 @@ void can2040_task_receive(void *params)
 
         printf("Received message: ID=0x%03X, DLC=%d, Data=", msg.id, msg.dlc);
         for (int i = 0; i < msg.dlc; i++) {
-            printf("%02X ", msg.data[i]);
+            printf("%c ", msg.data[i]);
         }
         printf("\n\n");
 
