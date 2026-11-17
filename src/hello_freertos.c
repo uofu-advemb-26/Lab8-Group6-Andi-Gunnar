@@ -58,7 +58,7 @@ void can2040_task_receive(void *params)
     struct can2040_msg msg;
     while(1) {
         xQueueReceive(msg_queue, &msg, portMAX_DELAY);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
 
         printf("Received message: ID=0x%03X, DLC=%d, Data=", msg.id, msg.dlc);
         for (int i = 0; i < msg.dlc; i++) {
@@ -66,8 +66,8 @@ void can2040_task_receive(void *params)
         }
         printf("\n\n");
 
-        vTaskDelay(pdMS_TO_TICKS(100));
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        // vTaskDelay(pdMS_TO_TICKS(100));
+        // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
     }
 }
 
@@ -75,7 +75,7 @@ void can2040_task_transmit(void *params)
 {
     struct can2040_msg msg;
     // Setup a message to send with low priority
-    msg.id = 0x123;
+    // msg.id = 0x123;
     // Setup a message to send with high priority
     msg.id = 0x001;
     msg.dlc = 4;
@@ -85,10 +85,15 @@ void can2040_task_transmit(void *params)
     msg.data[3] = 'O';
     while (1) {
         can2040_transmit(&cbus, &msg);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        vTaskDelay(pdMS_TO_TICKS(100));
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+        // vTaskDelay(pdMS_TO_TICKS(100));
+        // cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+        // vTaskDelay(pdMS_TO_TICKS(1000));
+
+        // Below is a chosen delay to make the high priority message
+        // less frequent.
+        // We got consistent reception of the low priority message.
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
